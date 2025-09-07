@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europol Fallbeispiel: Global Chain</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #003399; /* Europol-Blau */
+        color: #ffcc00; /* Europol-Gelb */
+        margin: 0;
+        padding: 0;
+        text-align: center;
+    }
+    .container {
+        padding: 50px 20px;
+        max-width: 800px;
+        margin: auto;
+    }
+    h1, h2, h3 {
+        margin-bottom: 20px;
+    }
+    button {
+        background-color: #ffcc00;
+        color: #003399;
+        font-size: 1.2em;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+    button:hover {
+        background-color: #e6b800;
+    }
+    input[type="text"] {
+        font-size: 1em;
+        padding: 10px;
+        border-radius: 5px;
+        border: 2px solid #ffcc00;
+        width: 300px;
+        margin-top: 20px;
+    }
+    .hidden {
+        display: none;
+    }
+    .hint {
+        background-color: rgba(255, 204, 0, 0.2);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 5px;
+        color: #fff;
+    }
+    #qrScanner {
+        margin: 20px auto;
+        width: 300px;
+    }
+</style>
+</head>
+<body>
+
+<!-- Startseite -->
+<div class="container" id="startPage">
+    <h1>Europol: Menschenhandel in Europa</h1>
+    <h2>Fallbeispiel: Global Chain</h2>
+    <p>Willkommen zu unserer interaktiven Fallakte über Menschenhandel in Europa. Du bist Teil eines Ermittlerteams, das den Auftrag hat, ein kriminelles Netzwerk aufzudecken.
+Wie geht’s?
+- über die Messe verteilt kannst du an den anderen Ständen Qr-Codes scannen, diese beinhalten wichtige Hinweise
+Deine Aufgabe
+- sammle die Hinweise und decke den Fall auf 
+
+Wenn du nicht weiterkommst, benutze den Hinweis-Button. Wenn du alles richtig kombinierst, kannst du den Fall lösen und dir eine Belohnung bei uns abholen ;)</p>
+    <button onclick="startCase()">Starten</button>
+</div>
+
+<!-- Einleitung -->
+<div class="container hidden" id="introPage">
+    <h2>Einleitung zum Fall</h2>
+    <p>Die 19-jährige Elena aus Rumänien sollte ein Praktikum in Berlin antreten. Über eine Online-Jobanzeige wurde sie nach Deutschland gelockt, doch danach verliert ihre Familie den Kontakt zu ihr. Ihr Ziel ist es nun, den Täter zu finden und Elena zu retten.</p>
+    <button onclick="goToQR()">Los geht's</button>
+</div>
+
+<!-- QR-Code Scanner Seite -->
+<div class="container hidden" id="qrPage">
+    <h2>Hinweise sammeln</h2>
+    <p>Scanne die QR-Codes, um Hinweise zu entdecken:</p>
+
+    <!-- QR-Code Scanner -->
+    <div id="qrScanner"></div>
+
+    <div id="hintsContainer"></div>
+    
+    <h3>Wer ist der Täter?</h3>
+    <input type="text" id="suspectInput" placeholder="Name des Täters">
+    <br>
+    <button onclick="checkSuspect()">Täter überprüfen</button>
+</div>
+
+<!-- Erfolg -->
+<div class="container hidden" id="successPage">
+    <h1>Herzlichen Glückwunsch!</h1>
+    <p>Du hast den Fall gelöst und Elena gerettet!</p>
+</div>
+
+<!-- Bibliothek für QR-Code -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+// Seitensteuerung
+function startCase() {
+    document.getElementById('startPage').classList.add('hidden');
+    document.getElementById('introPage').classList.remove('hidden');
+}
+
+function goToQR() {
+    document.getElementById('introPage').classList.add('hidden');
+    document.getElementById('qrPage').classList.remove('hidden');
+    startQRScanner(); // Scanner automatisch starten, sobald die Seite geöffnet wird
+}
+
+// Hinweise
+const hints = {
+    1: "Jobanzeige: Praktikum in Berlin – Ansprechpartnerin: Sofia R.",
+    2: "Elena schreibt: Ich bin in Berlin, Frau R. hat mich in ein kleines Appartement gebracht.",
+    3: "Nachbarin: Ich habe gesehen, dass Elena jeden Abend zu einem Lieferwagen gebracht wurde. Auf dem Lieferwagen steht 'O. Events'.",
+    4: "Informant: Sofia R. organisiert seit Monaten Praktika für junge Frauen aus Osteuropa. Alles gefälscht.",
+    5: "Bankauszug: Mehrere Überweisungen aus Rumänien an Sofia R. in Berlin, jeweils 500 Euro.",
+    6: "Europol-Datenbank: Frühere Fälle zeigen das gleiche Muster, Täterin immer: Sofia R."
+};
+
+// Hinweis-Anzeige über QR-Code
+function showHintByQRCode(code) {
+    const container = document.getElementById('hintsContainer');
+    const hintDiv = document.createElement('div');
+    hintDiv.className = 'hint';
+    if(hints[code]) {
+        hintDiv.textContent = hints[code];
+        container.appendChild(hintDiv);
+    } else {
+        hintDiv.textContent = "Unbekannter QR-Code!";
+        container.appendChild(hintDiv);
+    }
+}
+
+// QR-Code Scanner starten
+function startQRScanner() {
+    const html5QrCode = new Html5Qrcode("qrScanner");
+    Html5Qrcode.getCameras().then(cameras => {
+        if(cameras && cameras.length) {
+            let cameraId = cameras[0].id;
+            html5QrCode.start(
+                cameraId,
+                { fps: 10, qrbox: 250 },
+                qrCodeMessage => {
+                    // QR-Code Nachricht wird als Zahl erwartet (1-6)
+                    showHintByQRCode(qrCodeMessage);
+                },
+                errorMessage => {
+                    console.log("Scanfehler:", errorMessage);
+                }
+            ).catch(err => {
+                console.error("Kamera konnte nicht gestartet werden:", err);
+            });
+        }
+    }).catch(err => {
+        console.error("Keine Kamera gefunden:", err);
+    });
+}
+
+// Täter überprüfen
+function checkSuspect() {
+    const input = document.getElementById('suspectInput').value.trim().toLowerCase();
+    if(input === 'sofia r.' || input === 'sofia r') {
+        document.getElementById('qrPage').classList.add('hidden');
+        document.getElementById('successPage').classList.remove('hidden');
+    } else {
+        alert('Das ist nicht korrekt. Überprüfe die Hinweise erneut!');
+    }
+}
+</script>
+
+</body>
+</html>
